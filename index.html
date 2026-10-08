@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Alan Ramble</title>
+  <script>
+    try {
+      if (localStorage.getItem("theme") === "dark") document.documentElement.dataset.theme = "dark";
+    } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle dark mode" aria-pressed="false">
+    <span class="off"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6"/></svg></span>
+    <span class="on"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/></svg></span>
+  </button>
+
+  <main class="page">
+    <header class="masthead">
+      <h1 class="title">THE ALAN RAMBLE</h1>
+      <nav class="socials" aria-label="Social media">
+        <a href="https://www.tiktok.com/" target="_blank" rel="noopener">tt</a>
+        <a href="https://twitter.com/" target="_blank" rel="noopener">twt</a>
+        <a href="https://www.youtube.com/" target="_blank" rel="noopener">yt</a>
+        <a href="https://www.instagram.com/" target="_blank" rel="noopener">ins</a>
+      </nav>
+      <p class="date" id="date">Thursday, October 8th, 2026</p>
+    </header>
+
+    <section class="feature" aria-labelledby="politicast-label">
+      <div class="box" role="img" aria-label="Politicast placeholder"></div>
+      <div class="caption">
+        <span class="label" id="politicast-label">the POLITICAST</span>
+        <a class="cta" href="#">read more&nbsp;-&gt;</a>
+      </div>
+    </section>
+
+    <section class="feature" aria-labelledby="ramble-label">
+      <div class="box" role="img" aria-label="Latest Ramble video placeholder"></div>
+      <div class="caption">
+        <span class="label" id="ramble-label">latest RAMBLE</span>
+        <a class="cta" href="https://www.youtube.com/" target="_blank" rel="noopener">watch on Youtube-&gt;</a>
+      </div>
+    </section>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
