@@ -70,29 +70,31 @@
     return legend;
   }
 
+  // One cell per seat: D safe -> tilt, then R tilt -> safe, with a majority marker at the center.
   function buildTally(contest) {
     var t = tally(contest);
     var wrap = h("div", "pc-tally");
     wrap.setAttribute("role", "img");
     wrap.setAttribute("aria-label", "Projected seats: Democrats " + sum(t.D) + ", Republicans " + sum(t.R));
 
-    function bar(party, order) {
-      var b = h("div", "pc-tally-bar");
+    var cells = h("div", "pc-cells");
+    function addCells(party, order) {
       order.forEach(function (level) {
-        if (!t[party][level]) return;
-        var seg = h("span", "pc-" + party.toLowerCase() + "-" + level);
-        seg.style.flexGrow = t[party][level];
-        seg.title = t[party][level] + " " + LEVEL_LABEL[level] + " " + PARTY_NAME[party];
-        b.appendChild(seg);
+        for (var i = 0; i < t[party][level]; i++) {
+          cells.appendChild(h("span", "pc-" + party.toLowerCase() + "-" + level));
+        }
       });
-      b.style.flexGrow = sum(t[party]);
-      return b;
     }
+    addCells("D", LEVELS);
+    addCells("R", LEVELS.slice().reverse());
+    cells.style.gridTemplateColumns = "repeat(" + (sum(t.D) + sum(t.R)) + ", 1fr)";
+
+    var mid = h("div", "pc-tally-mid");
+    mid.appendChild(cells);
+    mid.appendChild(h("span", "pc-majority", "MAJORITY"));
 
     wrap.appendChild(h("span", "pc-tally-num pc-tally-d", sum(t.D)));
-    wrap.appendChild(bar("D", LEVELS));
-    wrap.appendChild(h("span", "pc-tally-vs", "vs"));
-    wrap.appendChild(bar("R", LEVELS.slice().reverse()));
+    wrap.appendChild(mid);
     wrap.appendChild(h("span", "pc-tally-num pc-tally-r", sum(t.R)));
     return wrap;
   }
@@ -180,7 +182,7 @@
 
       var msgs = [];
       if (!contest) msgs.push(labels[key] + " ratings coming soon.");
-      if (DATA.sample) msgs.push("Sample data: placeholder ratings, not real predictions.");
+      if (DATA.asOf) msgs.push("As of " + DATA.asOf);
       note.textContent = msgs.join(" ");
       note.hidden = msgs.length === 0;
     }

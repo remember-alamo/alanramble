@@ -98,16 +98,17 @@
   outline-offset: 2px;
 }
 
-/* seat tally */
+/* seat tally: one cell per seat */
 .pc-tally-slot {
-  min-height: 2.2rem;
   margin-top: 8px;
+  margin-bottom: 1.6rem;
+  min-height: 2rem;
 }
 
 .pc-tally {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .pc-tally-num {
@@ -120,21 +121,54 @@
 .pc-tally-d { color: var(--d-safe); }
 .pc-tally-r { color: var(--r-safe); }
 
-.pc-tally-bar {
-  display: flex;
-  flex-basis: 0;
-  height: 1.4rem;
+.pc-tally-mid {
+  position: relative;
+  flex: 1;
   min-width: 0;
 }
 
-.pc-tally-bar span {
-  flex-basis: 0;
+/* the 1px gaps and padding show through as a black outline around each cell, in both themes */
+.pc-cells {
+  display: grid;
+  gap: 1px;
+  padding: 1px;
+  height: 1.7rem;
+  background: #000;
+}
+
+.pc-cells span {
   background: var(--c);
 }
 
-.pc-tally-vs {
-  font-size: 1rem;
-  font-weight: 700;
+.pc-majority {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding-top: 8px;
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.pc-majority::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 1px;
+  height: 7px;
+  background: var(--fg);
+}
+
+.pc-majority::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: calc(50% - 3px);
+  border: 3px solid transparent;
+  border-bottom: 4px solid var(--fg);
+  border-top: 0;
 }
 
 /* map */
