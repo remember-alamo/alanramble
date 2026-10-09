@@ -1,0 +1,217 @@
+/* POLITICAST widget. Inherits --bg / --fg from the host page for text, outlines and tooltips. */
+.pc {
+  --d-safe: #1428a8;
+  --d-likely: #6677ff;
+  --d-lean: #aab4ff;
+  --d-tilt: #94a0b0;
+  --r-safe: #aa0000;
+  --r-likely: #ff6b6b;
+  --r-lean: #ffa8a8;
+  --r-tilt: #c9a0a0;
+
+  position: relative;
+  width: 100%;
+  font-size: 0.8rem;
+  font-weight: 400;
+  text-align: left;
+  color: var(--fg);
+}
+
+/* same hues, nudged so the darkest shades stay visible on black */
+:root[data-theme="dark"] .pc {
+  --d-safe: #3550f0;
+  --d-likely: #7486ff;
+  --d-lean: #aab4ff;
+  --d-tilt: #8d9bad;
+  --r-safe: #d11f2a;
+  --r-likely: #f0606a;
+  --r-lean: #f7a4aa;
+  --r-tilt: #b99090;
+}
+
+.pc-d-safe   { --c: var(--d-safe); }
+.pc-d-likely { --c: var(--d-likely); }
+.pc-d-lean   { --c: var(--d-lean); }
+.pc-d-tilt   { --c: var(--d-tilt); }
+.pc-r-safe   { --c: var(--r-safe); }
+.pc-r-likely { --c: var(--r-likely); }
+.pc-r-lean   { --c: var(--r-lean); }
+.pc-r-tilt   { --c: var(--r-tilt); }
+
+/* legend + contest tabs */
+.pc-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 16px;
+}
+
+.pc-legend {
+  display: flex;
+  gap: 14px;
+}
+
+.pc-legend-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin: 2px 0;
+}
+
+.pc-legend-label {
+  margin-right: 2px;
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+}
+
+.pc-swatch {
+  display: inline-block;
+  width: 26px;
+  height: 12px;
+  background: var(--c);
+}
+
+.pc-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.pc-tab {
+  padding: 4px 14px;
+  border: 1px solid var(--fg);
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.pc-tab[aria-pressed="true"] {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+.pc-tab:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+/* seat tally */
+.pc-tally-slot {
+  min-height: 2.2rem;
+  margin-top: 8px;
+}
+
+.pc-tally {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pc-tally-num {
+  font-size: 1.7rem;
+  font-weight: 700;
+  font-style: italic;
+  line-height: 1;
+}
+
+.pc-tally-d { color: var(--d-safe); }
+.pc-tally-r { color: var(--r-safe); }
+
+.pc-tally-bar {
+  display: flex;
+  flex-basis: 0;
+  height: 1.4rem;
+  min-width: 0;
+}
+
+.pc-tally-bar span {
+  flex-basis: 0;
+  background: var(--c);
+}
+
+.pc-tally-vs {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* map */
+.pc-map {
+  position: relative;
+  margin-top: 6px;
+}
+
+.pc-map svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.pc-map path {
+  stroke: var(--fg);
+  stroke-width: 0.8;
+  stroke-linejoin: round;
+}
+
+.pc-map path.pc-none {
+  fill: var(--bg);
+}
+
+.pc-map path[class*="pc-d-"],
+.pc-map path[class*="pc-r-"] {
+  fill: var(--c);
+  cursor: pointer;
+}
+
+.pc-map path[class*="pc-d-"]:hover,
+.pc-map path[class*="pc-r-"]:hover,
+.pc-map path:focus-visible {
+  stroke-width: 2;
+  outline: none;
+}
+
+/* hover box */
+.pc-tip {
+  position: absolute;
+  z-index: 5;
+  min-width: 11rem;
+  padding: 8px 10px;
+  border: 2px solid var(--fg);
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 0.85rem;
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.pc-tip[hidden] { display: none; }
+
+.pc-tip-name { display: block; font-size: 1rem; margin-bottom: 4px; }
+
+.pc-tip-rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.pc-tip-rating .pc-swatch { width: 14px; }
+
+.pc-tip-cands {
+  margin: 4px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pc-tip-none { font-style: italic; }
+
+.pc-note {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  font-style: italic;
+  text-align: center;
+}
+
+.pc-note[hidden] { display: none; }

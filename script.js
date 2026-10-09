@@ -6,6 +6,7 @@ function ordinal(n) {
 }
 
 function renderDate() {
+  if (!dateEl) return;
   const now = new Date();
   const weekday = now.toLocaleDateString("en-US", { weekday: "long" });
   const month = now.toLocaleDateString("en-US", { month: "long" });
