@@ -206,6 +206,47 @@
   outline: none;
 }
 
+/* state labels: white on contested states, 60% gray on states with no race */
+.pc-labels {
+  font-family: inherit;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+.pc-labels text {
+  fill: #fff;
+  /* thin dark halo keeps white readable on the light Lean/Tilt shades */
+  stroke: rgba(0, 0, 0, 0.5);
+  paint-order: stroke;
+  stroke-linejoin: round;
+}
+
+.pc-labels .pc-lnone text {
+  fill: #666;
+  stroke: none;
+}
+
+.pc-labels line {
+  stroke: var(--fg);
+}
+
+.pc-labels .pc-lnone line {
+  stroke: #666;
+}
+
+.pc-labels .pc-chip {
+  fill: var(--c);
+  pointer-events: all;
+  cursor: pointer;
+}
+
+/* no-race callouts get a page-colored box so the leader line stops at the label */
+.pc-labels .pc-lnone .pc-chip {
+  fill: var(--bg);
+  pointer-events: none;
+}
+
 /* hover box */
 .pc-tip {
   position: absolute;

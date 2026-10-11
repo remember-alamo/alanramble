@@ -16,6 +16,32 @@
   var LEVEL_LABEL = { safe: "Safe", likely: "Likely", lean: "Lean", tilt: "Tilt" };
   var PARTY_NAME = { D: "Democratic", R: "Republican" };
 
+  // States too small for an in-state label get a chip in the ocean (or above, for VT) joined to
+  // the state by a leader line. `to` = point inside the state, `at` = chip center, in map units.
+  // Nudges for in-state labels whose computed centers look off. [x, y] in map units.
+  var LABEL_AT = {
+    AL: [674, 431],     // level with MS
+    GA: [743.8, 431],   // level with MS
+    TX: [442.6, 466],   // in line with KS, a bit higher
+    PA: [808, 226],     // centered
+    ND: [429, 103],
+    SD: [429, 174],
+    MT: [288, 98],
+    OR: [104, 131]
+  };
+
+  var CALLOUTS = {
+    VT: { to: [871, 124], at: [869, 94] },
+    NH: { to: [895, 148], at: [946, 146] },
+    MA: { to: [912, 172], at: [946, 165] },
+    RI: { to: [905, 184], at: [946, 184] },
+    CT: { to: [888, 194], at: [946, 203] },
+    NJ: { to: [863, 238], at: [912, 232] },
+    DE: { to: [857, 262], at: [912, 254] },
+    MD: { to: [858, 278], at: [912, 276] },
+    DC: { to: [828, 268], at: [912, 298] }
+  };
+
   function h(tag, className, text) {
     var node = document.createElement(tag);
     if (className) node.className = className;
@@ -27,6 +53,13 @@
     var node = document.createElementNS(NS, tag);
     for (var k in attrs) node.setAttribute(k, attrs[k]);
     return node;
+  }
+
+  // DC only has electors in presidential races, so its race counts only when the contest is flagged `presidential`.
+  function raceFor(contest, code) {
+    var race = contest && contest.races && contest.races[code];
+    if (race && code === "DC" && !contest.presidential) return null;
+    return race || null;
   }
 
   function margin(race) {
@@ -150,9 +183,53 @@
       paths[code] = p;
     });
 
+    // state labels: two-letter codes inside states, chips + leader lines for the small ones
+    var vbWidth = parseFloat(STATES.viewBox.split(" ")[2]);
+    var labelLayer = svg("g", { "class": "pc-labels", "aria-hidden": "true" });
+    map.appendChild(labelLayer);
+    var labelNodes = {};
+    Object.keys(STATES.paths).forEach(function (code) {
+      var node = { g: svg("g") };
+      var call = CALLOUTS[code];
+      if (call) {
+        node.line = svg("line", { x1: call.to[0], y1: call.to[1], x2: call.at[0], y2: call.at[1] });
+        node.rect = svg("rect", { "data-state": code });
+        node.g.appendChild(node.line);
+        node.g.appendChild(node.rect);
+      }
+      var pos = call ? call.at : (LABEL_AT[code] || STATES.paths[code].label);
+      node.text = svg("text", { x: pos[0], y: pos[1] });
+      node.text.textContent = code;
+      node.g.appendChild(node.text);
+      labelLayer.appendChild(node.g);
+      labelNodes[code] = node;
+    });
+
+    // keep labels at the same on-screen size as the MAJORITY caption (capped so chips don't collide)
+    function layoutLabels() {
+      var scale = map.getBoundingClientRect().width / vbWidth;
+      if (!scale) return;
+      var rootPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      var fs = Math.min(0.65 * rootPx / scale, 13);
+      labelLayer.style.fontSize = fs + "px";
+      labelLayer.style.strokeWidth = Math.max(1 / scale, 0.6) + "px";
+      var w = fs * 2.1, hgt = fs * 1.35;
+      Object.keys(labelNodes).forEach(function (code) {
+        var n = labelNodes[code];
+        if (!n.rect) return;
+        var at = CALLOUTS[code].at;
+        n.rect.setAttribute("x", at[0] - w / 2);
+        n.rect.setAttribute("y", at[1] - hgt / 2);
+        n.rect.setAttribute("width", w);
+        n.rect.setAttribute("height", hgt);
+      });
+    }
+    if (window.ResizeObserver) new ResizeObserver(layoutLabels).observe(map);
+    window.addEventListener("resize", layoutLabels);
+
     function stateInfo(code) {
       var contest = contests[current];
-      var race = contest && contest.races && contest.races[code];
+      var race = raceFor(contest, code);
       return { name: STATES.paths[code].name, race: race, contest: contest };
     }
 
@@ -169,8 +246,15 @@
 
       Object.keys(paths).forEach(function (code) {
         var p = paths[code];
-        var race = contest && contest.races[code];
+        var race = raceFor(contest, code);
         p.setAttribute("class", race ? "pc-" + race.lean.toLowerCase() + "-" + race.rating : "pc-none");
+        var ln = labelNodes[code];
+        // DC has no Senate or governor race, so it is hidden entirely (shape, label and callout)
+        var hideState = code === "DC" && !race;
+        p.style.display = hideState ? "none" : "";
+        ln.g.style.display = hideState ? "none" : "";
+        ln.g.setAttribute("class", race ? "pc-lrace" : "pc-lnone");
+        if (ln.rect) ln.rect.setAttribute("class", race ? "pc-chip pc-" + race.lean.toLowerCase() + "-" + race.rating : "pc-chip");
         if (race) {
           p.setAttribute("tabindex", "0");
           p.setAttribute("aria-label", STATES.paths[code].name + ": " + describe(race) + ", " + margin(race));
@@ -185,6 +269,7 @@
       if (DATA.asOf) msgs.push("As of " + DATA.asOf);
       note.textContent = msgs.join(" ");
       note.hidden = msgs.length === 0;
+      layoutLabels();
     }
 
     function fillTip(code) {
