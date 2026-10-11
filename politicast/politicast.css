@@ -296,3 +296,157 @@
 }
 
 .pc-note[hidden] { display: none; }
+
+/* selected state on the map (when the opinion panel is on) */
+.pc-map path.pc-selected {
+  stroke-width: 2.6;
+}
+
+/* opinion panel */
+.pc-op {
+  margin-top: 18px;
+  color: var(--fg);
+}
+
+.pc-op-rule {
+  margin: 0 0 18px;
+  border: 0;
+  border-top: 1px solid var(--fg);
+}
+
+.pc-op-title {
+  margin: 0 0 10px;
+  font-size: 1.6rem;
+  font-style: italic;
+  font-weight: 700;
+  text-align: center;
+}
+
+.pc-op-tabs {
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.pc-op-tabs[hidden] { display: none; }
+
+.pc-op-body {
+  display: grid;
+  grid-template-columns: minmax(0, 270px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.pc-op-body.pc-op-empty { grid-template-columns: 1fr; }
+
+.pc-op-side[hidden] { display: none; }
+
+.pc-op-frame {
+  aspect-ratio: 1;
+  border: 3px solid var(--fg);
+}
+
+.pc-op-frame svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.pc-op-frame path {
+  fill: var(--c);
+  stroke: var(--fg);
+  stroke-linejoin: round;
+}
+
+.pc-op-frame text {
+  fill: #fff;
+  stroke: rgba(0, 0, 0, 0.5);
+  stroke-width: 0.4;
+  paint-order: stroke;
+  text-anchor: middle;
+  dominant-baseline: central;
+  font-family: inherit;
+}
+
+.pc-op-select {
+  display: block;
+  width: calc(100% - 28px);
+  margin: 8px auto 0;
+  padding: 4px 6px;
+  border: 1px solid var(--fg);
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.pc-op-main { min-width: 0; }
+
+.pc-op-state {
+  margin: -6px 0 0;
+  font-size: 3rem;
+  font-style: italic;
+  font-weight: 700;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+.pc-op-cands {
+  margin: 4px 0 0;
+  font-size: 1.3rem;
+}
+
+.pc-op-rating {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+/* rating text uses the map color, pulled toward the page text color so pale shades stay readable */
+.pc-op-level {
+  color: color-mix(in srgb, var(--c) 70%, var(--fg));
+  font-size: 1.6rem;
+  font-style: italic;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.pc-op-margin {
+  flex: 1;
+  min-width: 4.5rem;
+  padding: 0 8px;
+  background: var(--c);
+  color: #fff;
+  font-size: 1.3rem;
+  text-align: right;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
+}
+
+.pc-op-heading {
+  margin: 18px 0 8px;
+  font-size: 1.4rem;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.pc-op-text {
+  margin: 0 0 14px;
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.pc-op-soon {
+  font-style: italic;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .pc-op-body { grid-template-columns: 1fr; }
+  .pc-op-side { max-width: 300px; margin: 0 auto; width: 100%; }
+  .pc-op-state { font-size: 2.2rem; margin-top: 0; }
+  .pc-op-cands { font-size: 1.1rem; }
+  .pc-op-rating { font-size: 1.1rem; }
+  .pc-op-level { font-size: 1.3rem; }
+}

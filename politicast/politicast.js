@@ -6,6 +6,8 @@
 //   <script src="politicast/data.js"></script>
 //   <script src="politicast/politicast.js"></script>
 // Every element with [data-politicast] is turned into a widget. No dependencies.
+// Add the attribute data-opinions (and load politicast/opinions.js) to also show the opinion panel
+// under the map; clicking a state then opens that race's opinion.
 (function () {
   "use strict";
 
@@ -164,7 +166,7 @@
     order.forEach(function (key) {
       var b = h("button", "pc-tab", labels[key]);
       b.type = "button";
-      b.addEventListener("click", function () { show(key); });
+      b.addEventListener("click", function () { show(key); if (OPINIONS && selected[key]) setHash(key, selected[key]); });
       tabs.appendChild(b);
       tabButtons[key] = b;
     });
@@ -185,6 +187,8 @@
 
     var note = h("p", "pc-note");
     root.appendChild(note);
+
+    var OPINIONS = root.hasAttribute("data-opinions") ? window.POLITICAST_OPINIONS : null;
 
     var paths = {};
     Object.keys(STATES.paths).forEach(function (code) {
@@ -280,6 +284,7 @@
       note.textContent = msgs.join(" ");
       note.hidden = msgs.length === 0;
       layoutLabels();
+      if (OPINIONS) renderOpinions();
     }
 
     function fillTip(code) {
@@ -337,6 +342,14 @@
       var code = stateOf(e);
       if (code) showTip(code, e.clientX, e.clientY);
       else hideTip();
+      if (code && OPINIONS) selectState(code, true);
+    });
+    map.addEventListener("keydown", function (e) {
+      var code = stateOf(e);
+      if (code && OPINIONS && (e.key === "Enter" || e.key === " ")) {
+        e.preventDefault();
+        selectState(code, true);
+      }
     });
     map.addEventListener("focusin", function (e) {
       var code = stateOf(e);
@@ -346,6 +359,174 @@
     });
     map.addEventListener("focusout", hideTip);
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") hideTip(); });
+
+    // ---- opinions panel (only when the root has data-opinions) ----
+    var selected = { senate: null, governors: null };
+    var opSection, opTabs, opBody, opSide, opFrame, opSelect, opMain;
+
+    function hasText(office, code) {
+      var t = OPINIONS && OPINIONS[office] && OPINIONS[office][code];
+      return typeof t === "string" && t.trim() !== "";
+    }
+
+    function raceCodes(office) {
+      var contest = contests[office];
+      if (!contest) return [];
+      return Object.keys(contest.races).filter(function (c) { return raceFor(contest, c); })
+        .sort(function (a, b) { return STATES.paths[a].name.localeCompare(STATES.paths[b].name); });
+    }
+
+    function officeHasOpinions(office) {
+      return raceCodes(office).some(function (c) { return hasText(office, c); });
+    }
+
+    function firstChoice(office) {
+      var codes = raceCodes(office);
+      return codes.filter(function (c) { return hasText(office, c); })[0] || codes[0] || null;
+    }
+
+    function setHash(office, code) {
+      try { history.replaceState(null, "", "#" + office + "-" + code); } catch (e) {}
+    }
+
+    function selectState(code, scroll) {
+      if (!raceFor(contests[current], code)) return;
+      selected[current] = code;
+      renderOpinions();
+      setHash(current, code);
+      if (scroll && opSection) {
+        var calm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+        opSection.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "start" });
+      }
+    }
+
+    function buildOpinions() {
+      opSection = h("section", "pc-op");
+      opSection.appendChild(h("hr", "pc-op-rule"));
+      opSection.appendChild(h("h2", "pc-op-title", "ALAN'S OPINIONS"));
+      opTabs = h("div", "pc-tabs pc-op-tabs");
+      opTabs.setAttribute("role", "group");
+      opTabs.setAttribute("aria-label", "Opinions by office");
+      opSection.appendChild(opTabs);
+      opBody = h("div", "pc-op-body");
+      opSide = h("div", "pc-op-side");
+      opFrame = h("div", "pc-op-frame");
+      opSelect = h("select", "pc-op-select");
+      opSelect.setAttribute("aria-label", "Choose a race");
+      opSelect.addEventListener("change", function () { selectState(opSelect.value, false); });
+      opSide.appendChild(opFrame);
+      opSide.appendChild(opSelect);
+      opMain = h("div", "pc-op-main");
+      opBody.appendChild(opSide);
+      opBody.appendChild(opMain);
+      opSection.appendChild(opBody);
+      root.appendChild(opSection);
+    }
+
+    // the state's own shape, in its rating color
+    function drawOutline(code, race) {
+      opFrame.textContent = "";
+      var p = paths[code];
+      var bb;
+      try { bb = p.getBBox(); } catch (e) { return; }
+      var side = Math.max(bb.width, bb.height) * 1.12;
+      var cx = bb.x + bb.width / 2, cy = bb.y + bb.height / 2;
+      var s = svg("svg", { viewBox: [cx - side / 2, cy - side / 2, side, side].join(" "), "aria-hidden": "true" });
+      s.appendChild(svg("path", {
+        d: STATES.paths[code].d,
+        "class": "pc-" + race.lean.toLowerCase() + "-" + race.rating,
+        "stroke-width": side / 220
+      }));
+      var pos = LABEL_AT[code] || STATES.paths[code].label;
+      var t = svg("text", { x: pos[0], y: pos[1], "font-size": side * 0.05 });
+      t.textContent = code;
+      s.appendChild(t);
+      opFrame.appendChild(s);
+    }
+
+    function renderOpinions() {
+      var offices = order.filter(officeHasOpinions);
+
+      // office switch: only offices with at least one opinion, and only if there is a choice
+      opTabs.textContent = "";
+      offices.forEach(function (key) {
+        var b = h("button", "pc-tab", labels[key]);
+        b.type = "button";
+        b.setAttribute("aria-pressed", String(key === current));
+        b.addEventListener("click", function () { show(key); if (selected[key]) setHash(key, selected[key]); });
+        opTabs.appendChild(b);
+      });
+      opTabs.hidden = offices.length < 2;
+
+      opMain.textContent = "";
+      if (!selected[current] || !raceFor(contests[current], selected[current])) {
+        selected[current] = firstChoice(current);
+      }
+      var code = selected[current];
+      var race = code && raceFor(contests[current], code);
+
+      // highlight the selected state on the map
+      Object.keys(paths).forEach(function (c) {
+        paths[c].classList.toggle("pc-selected", !!race && c === code);
+      });
+
+      if (!race || !officeHasOpinions(current)) {
+        opSide.hidden = true;
+        opMain.appendChild(h("p", "pc-op-soon", labels[current] + " opinions are coming soon."));
+        return;
+      }
+      opSide.hidden = false;
+      drawOutline(code, race);
+
+      opSelect.textContent = "";
+      raceCodes(current).forEach(function (c) {
+        var o = h("option", null, STATES.paths[c].name);
+        o.value = c;
+        if (c === code) o.selected = true;
+        opSelect.appendChild(o);
+      });
+
+      var lean = race.lean.toLowerCase() + "-" + race.rating;
+      opMain.appendChild(h("h3", "pc-op-state", STATES.paths[code].name));
+      opMain.appendChild(h("p", "pc-op-cands", (race.candidates || []).map(function (c) {
+        return c.name + " (" + c.party + ")";
+      }).join(" vs. ")));
+
+      var rating = h("p", "pc-op-rating");
+      rating.appendChild(document.createTextNode("POLITICAST Rating: "));
+      rating.appendChild(h("span", "pc-op-level pc-" + lean, describe(race)));
+      rating.appendChild(h("span", "pc-op-margin pc-" + lean, "+" + Number(race.margin).toFixed(1) + "%"));
+      opMain.appendChild(rating);
+
+      opMain.appendChild(h("h4", "pc-op-heading", "THE OPINION:"));
+      if (hasText(current, code)) {
+        OPINIONS[current][code].trim().split(/\n\s*\n/).forEach(function (para) {
+          opMain.appendChild(h("p", "pc-op-text", para.replace(/\s*\n\s*/g, " ").trim()));
+        });
+      } else {
+        opMain.appendChild(h("p", "pc-op-text pc-op-soon", "Opinion coming soon."));
+      }
+    }
+
+    function initialSelection() {
+      var m = /^#(senate|governors)-([A-Za-z]{2})$/.exec(window.location.hash || "");
+      var office = "senate", code = "TX";
+      if (m && STATES.paths[m[2].toUpperCase()]) {
+        office = m[1];
+        code = m[2].toUpperCase();
+      }
+      if (contests[office] && raceFor(contests[office], code)) {
+        current = office;
+        selected[office] = code;
+      } else if (raceFor(contests.senate, "TX")) {
+        selected.senate = "TX";
+      }
+    }
+
+    if (OPINIONS) {
+      buildOpinions();
+      initialSelection();
+    }
 
     show(current);
   }
