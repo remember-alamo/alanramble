@@ -20,17 +20,29 @@ setInterval(renderDate, 60 * 1000);
 // dark mode toggle (initial theme is applied by the inline script in <head>)
 const root = document.documentElement;
 const toggle = document.getElementById("theme-toggle");
+const systemDark = window.matchMedia ? matchMedia("(prefers-color-scheme: dark)") : null;
 
-function syncToggle() {
-  toggle.setAttribute("aria-pressed", root.dataset.theme === "dark");
+function hasSavedChoice() {
+  try { return localStorage.getItem("theme") !== null; } catch (e) { return false; }
+}
+
+function setTheme(theme) {
+  if (theme === "dark") root.dataset.theme = "dark";
+  else delete root.dataset.theme;
+  toggle.setAttribute("aria-pressed", theme === "dark");
 }
 
 toggle.addEventListener("click", () => {
   const next = root.dataset.theme === "dark" ? "light" : "dark";
-  if (next === "dark") root.dataset.theme = "dark";
-  else delete root.dataset.theme;
+  setTheme(next);
   try { localStorage.setItem("theme", next); } catch (e) {}
-  syncToggle();
 });
 
-syncToggle();
+// until the visitor clicks the switch, keep following the system setting
+if (systemDark) {
+  systemDark.addEventListener("change", (e) => {
+    if (!hasSavedChoice()) setTheme(e.matches ? "dark" : "light");
+  });
+}
+
+setTheme(root.dataset.theme === "dark" ? "dark" : "light");

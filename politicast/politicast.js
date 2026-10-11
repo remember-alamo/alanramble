@@ -13,6 +13,8 @@
   var DATA = window.POLITICAST_DATA;
   var NS = "http://www.w3.org/2000/svg";
   var LEVELS = ["safe", "likely", "lean", "tilt"];
+  // seats not up this cycle are drawn first (outer edges) in the tally bar, in a darker shade than Safe
+  var BAR_LEVELS = ["hold"].concat(LEVELS);
   var LEVEL_LABEL = { safe: "Safe", likely: "Likely", lean: "Lean", tilt: "Tilt" };
   var PARTY_NAME = { D: "Democratic", R: "Republican" };
 
@@ -22,7 +24,8 @@
   var LABEL_AT = {
     AL: [674, 431],     // level with MS
     GA: [743.8, 431],   // level with MS
-    TX: [442.6, 466],   // in line with KS, a bit higher
+    KS: [456, 308],     // centered
+    TX: [456, 466],     // in line with KS, a bit higher
     PA: [808, 226],     // centered
     ND: [429, 103],
     SD: [429, 174],
@@ -72,10 +75,10 @@
 
   function tally(contest) {
     var t = { D: {}, R: {} };
-    LEVELS.forEach(function (l) { t.D[l] = 0; t.R[l] = 0; });
+    BAR_LEVELS.forEach(function (l) { t.D[l] = 0; t.R[l] = 0; });
     var hold = contest.holdovers || {};
-    t.D.safe += hold.D || 0;
-    t.R.safe += hold.R || 0;
+    t.D.hold = hold.D || 0;
+    t.R.hold = hold.R || 0;
     Object.keys(contest.races).forEach(function (code) {
       var r = contest.races[code];
       t[r.lean][r.rating] += 1;
@@ -84,7 +87,7 @@
   }
 
   function sum(counts) {
-    return LEVELS.reduce(function (a, l) { return a + counts[l]; }, 0);
+    return BAR_LEVELS.reduce(function (a, l) { return a + counts[l]; }, 0);
   }
 
   function buildLegend() {
@@ -100,6 +103,13 @@
       });
       legend.appendChild(col);
     });
+    var holdCol = h("div", "pc-legend-col");
+    var holdRow = h("div", "pc-legend-row");
+    holdRow.appendChild(h("span", "pc-legend-label", "NO CONTEST"));
+    holdRow.appendChild(h("span", "pc-swatch pc-r-hold"));
+    holdRow.appendChild(h("span", "pc-swatch pc-d-hold"));
+    holdCol.appendChild(holdRow);
+    legend.appendChild(holdCol);
     return legend;
   }
 
@@ -118,8 +128,8 @@
         }
       });
     }
-    addCells("D", LEVELS);
-    addCells("R", LEVELS.slice().reverse());
+    addCells("D", BAR_LEVELS);
+    addCells("R", BAR_LEVELS.slice().reverse());
     cells.style.gridTemplateColumns = "repeat(" + (sum(t.D) + sum(t.R)) + ", 1fr)";
 
     var mid = h("div", "pc-tally-mid");

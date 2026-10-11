@@ -1,9 +1,11 @@
 /* POLITICAST widget. Inherits --bg / --fg from the host page for text, outlines and tooltips. */
 .pc {
+  --d-hold: #0a1366;
   --d-safe: #1428a8;
   --d-likely: #6677ff;
   --d-lean: #aab4ff;
   --d-tilt: #94a0b0;
+  --r-hold: #5c0000;
   --r-safe: #aa0000;
   --r-likely: #ff6b6b;
   --r-lean: #ffa8a8;
@@ -19,20 +21,24 @@
 
 /* same hues, nudged so the darkest shades stay visible on black */
 :root[data-theme="dark"] .pc {
+  --d-hold: #1c2b9e;
   --d-safe: #3550f0;
   --d-likely: #7486ff;
   --d-lean: #aab4ff;
   --d-tilt: #8d9bad;
+  --r-hold: #7c1019;
   --r-safe: #d11f2a;
   --r-likely: #f0606a;
   --r-lean: #f7a4aa;
   --r-tilt: #b99090;
 }
 
+.pc-d-hold   { --c: var(--d-hold); }
 .pc-d-safe   { --c: var(--d-safe); }
 .pc-d-likely { --c: var(--d-likely); }
 .pc-d-lean   { --c: var(--d-lean); }
 .pc-d-tilt   { --c: var(--d-tilt); }
+.pc-r-hold   { --c: var(--r-hold); }
 .pc-r-safe   { --c: var(--r-safe); }
 .pc-r-likely { --c: var(--r-likely); }
 .pc-r-lean   { --c: var(--r-lean); }
