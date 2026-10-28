@@ -168,7 +168,7 @@
   top: 6px;
   right: 6px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 3px;
 }
 
@@ -196,7 +196,7 @@
 }
 
 .gc-zoom-reset {
-  margin-top: 3px;
+  margin-left: 3px;
 }
 
 .gc-frame path {
@@ -213,6 +213,28 @@
 .gc-frame path.gc-d { fill: var(--gc-d); }
 .gc-frame path.gc-r { fill: var(--gc-r); }
 .gc-frame path.gc-gray { fill: var(--gc-gray); }
+
+/* city labels (zoomed view): page-colored dot and text, outlined in the background color */
+.gc-cities {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.gc-cities circle {
+  fill: var(--fg);
+  stroke: var(--bg);
+  stroke-width: 1.5;
+}
+
+.gc-cities text {
+  fill: var(--fg);
+  stroke: var(--bg);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  paint-order: stroke;
+  dominant-baseline: central;
+}
 
 /* FLIP hatching (pattern fill is set inline per district) */
 .gc-hatch-bg { fill: var(--bg); }

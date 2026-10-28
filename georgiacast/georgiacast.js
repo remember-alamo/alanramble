@@ -4,6 +4,7 @@
 //   <div data-georgiacast></div>
 //   <script src="georgiacast/districts.js"></script>
 //   <script src="georgiacast/data.js"></script>
+//   <script src="georgiacast/cities.js"></script>   (optional: city labels in the zoomed view)
 //   <script src="georgiacast/georgiacast.js"></script>
 // Every element with [data-georgiacast] is turned into a widget. No dependencies.
 (function () {
@@ -11,6 +12,7 @@
 
   var MAP = window.GEORGIACAST_DISTRICTS;
   var DATA = window.GEORGIACAST_DATA;
+  var CITIES = window.GEORGIACAST_CITIES || [];
   var NS = "http://www.w3.org/2000/svg";
   var PARTY_NAME = { D: "Democrat", R: "Republican" };
   var CHAMBERS = ["house", "senate"];
@@ -169,6 +171,9 @@
     var metroLayer = svg("g", {});
     stateMap.appendChild(stateLayer);
     metroMap.appendChild(metroLayer);
+    // city labels sit above the districts in the zoomed view only, and never take the pointer
+    var cityLayer = svg("g", { "class": "gc-cities", "aria-hidden": "true" });
+    metroMap.appendChild(cityLayer);
     var m = MAP.metro;
     var metroBox = svg("rect", { x: m[0], y: m[1], width: m[2], height: m[3], "class": "gc-metro-box" });
     stateMap.appendChild(metroBox);
@@ -415,7 +420,60 @@
       zoomIn.disabled = w <= home[2] / MAX_ZOOM + 1e-6;
       reset.disabled = view.join() === home.join();
       sizeHatches();
+      placeCities();
     }
+
+    // ---- city labels ----
+    // Bigger cities show first: 60k+ at the starting zoom, 40k+ from 2x, everything from 3x.
+    // Labels are drawn in screen pixels (scaled back by the zoom) so they stay the same size,
+    // A label goes right of its dot, or left if that's blocked or would run off the frame;
+    // if neither side has room it waits until you zoom in.
+    var CITY_TIERS = [[3, 0], [2, 40000], [1, 60000]];
+    var cities = CITIES.map(function (c) {
+      var g = svg("g", {});
+      g.appendChild(svg("circle", { cx: 0, cy: 0, r: 3.5 }));
+      var t = svg("text", { x: 7, y: 0 });
+      t.textContent = c[0];
+      g.appendChild(t);
+      g.style.display = "none";
+      cityLayer.appendChild(g);
+      return { name: c[0], pop: c[1], x: c[2], y: c[3], g: g, text: t, w: null };
+    });
+
+    function placeCities() {
+      var px = metroMap.getBoundingClientRect().width;
+      if (!px || !controls) return;
+      var u = view[2] / px;
+      var zoom = home[2] / view[2];
+      var minPop = CITY_TIERS.filter(function (t) { return zoom >= t[0] - 1e-6; })[0][1];
+      // keep clear of the zoom buttons
+      var frame = metroMap.getBoundingClientRect(), btns = controls.getBoundingClientRect();
+      var placed = [[btns.left - frame.left - 3, btns.top - frame.top - 3, btns.right - frame.left + 3, btns.bottom - frame.top + 3]];
+      cities.forEach(function (c) {
+        var sx = (c.x - view[0]) / u, sy = (c.y - view[1]) / u;
+        var show = c.pop >= minPop && sx >= 0 && sx <= px && sy >= 0 && sy <= px * view[3] / view[2];
+        if (show) {
+          c.g.style.display = "";
+          if (c.w == null) c.w = c.text.getComputedTextLength();
+          var sides = [[sx - 5, sy - 7, sx + 9 + c.w, sy + 7], [sx - 9 - c.w, sy - 7, sx + 5, sy + 7]];
+          var side = [0, 1].filter(function (i) {
+            var box = sides[i];
+            return box[0] >= 0 && box[2] <= px && !placed.some(function (b) {
+              return box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1];
+            });
+          })[0];
+          show = side != null;
+          if (show) {
+            placed.push(sides[side]);
+            c.text.setAttribute("x", side ? -7 : 7);
+            c.text.setAttribute("text-anchor", side ? "end" : "start");
+          }
+        }
+        c.g.style.display = show ? "" : "none";
+        if (show) c.g.setAttribute("transform", "translate(" + c.x + "," + c.y + ") scale(" + u + ")");
+      });
+    }
+    if (window.ResizeObserver) new ResizeObserver(placeCities).observe(metroMap);
 
     // zoom by `factor` keeping the map point under (clientX, clientY) in place
     function zoomAt(factor, clientX, clientY) {
