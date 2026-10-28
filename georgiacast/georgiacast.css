@@ -1,0 +1,279 @@
+/* GEORGIACAST widget. Inherits --bg / --fg from the host page for text, outlines and tooltips. */
+.gc {
+  --gc-d: #2f4fe0;
+  --gc-r: #c8202b;
+  --gc-gray: #c8c8c8;
+  --gc-line: #555;
+  --gc-empty: #8a8a8a;
+
+  position: relative;
+  width: 100%;
+  font-size: 0.8rem;
+  font-weight: 400;
+  text-align: left;
+  color: var(--fg);
+}
+
+/* same hues, a touch brighter on black */
+:root[data-theme="dark"] .gc {
+  --gc-d: #3b5cf0;
+  --gc-r: #d8262f;
+  --gc-empty: #555;
+}
+
+/* two panels over a full-width view switch, split by rules like the outer box */
+.gc-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  border-bottom: 2px solid var(--fg);
+}
+
+.gc-left,
+.gc-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px 6px;
+}
+
+.gc-left {
+  border-right: 2px solid var(--fg);
+  padding-left: 0;
+}
+
+.gc-right {
+  padding-right: 0;
+}
+
+/* legend */
+.gc-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 10px;
+}
+
+.gc-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.gc-legend-label {
+  margin-right: 2px;
+  font-size: 0.8rem;
+}
+
+.gc-sw {
+  display: inline-block;
+  width: 22px;
+  height: 11px;
+  background: var(--c);
+}
+
+.gc-sw-d { --c: var(--gc-d); }
+.gc-sw-r { --c: var(--gc-r); }
+
+.gc-sw-flip {
+  background: repeating-linear-gradient(-45deg, var(--c) 0 2px, transparent 2px 4px);
+}
+
+.gc-sw-shift {
+  width: 52px;
+  background: linear-gradient(to right, #6b0000, var(--gc-r) 25%, #fff 50%, var(--gc-d) 75%, #00007a);
+}
+
+/* tabs */
+.gc-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.gc-tab {
+  min-width: 5.5em;
+  padding: 4px 14px;
+  border: 1px solid var(--fg);
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.gc-tab[aria-pressed="true"] {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+.gc-tab:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.gc-modes {
+  padding: 8px 0 0;
+}
+
+/* maps */
+.gc-fig {
+  width: 100%;
+  margin: 0;
+}
+
+.gc-fig-metro {
+  margin-top: auto;
+}
+
+.gc-frame {
+  border: 2px solid var(--fg);
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.gc-frame svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.gc-frame-state svg {
+  padding: 4px;
+}
+
+.gc-frame-metro svg {
+  aspect-ratio: 1;
+}
+
+.gc-frame path {
+  stroke: var(--gc-line);
+  stroke-width: 0.6px;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.gc-frame-metro path {
+  stroke-width: 0.8px;
+}
+
+.gc-frame path.gc-d { fill: var(--gc-d); }
+.gc-frame path.gc-r { fill: var(--gc-r); }
+.gc-frame path.gc-gray { fill: var(--gc-gray); }
+
+.gc-frame path:hover {
+  stroke: var(--fg);
+  stroke-width: 2px;
+}
+
+.gc-metro-box {
+  fill: none;
+  stroke: var(--fg);
+  stroke-width: 2px;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.gc-cap {
+  margin-top: 4px;
+  font-size: 1rem;
+  text-align: center;
+}
+
+/* seat gauge */
+.gc-gauge {
+  display: block;
+  width: min(100%, 220px);
+  height: auto;
+  margin-top: 4px;
+  overflow: visible;
+}
+
+.gc-arc {
+  fill: none;
+  stroke-width: 26;
+}
+
+.gc-arc-empty { stroke: var(--gc-empty); }
+.gc-arc-d { stroke: var(--gc-d); }
+.gc-arc-r { stroke: var(--gc-r); }
+
+.gc-majority {
+  fill: var(--fg);
+  font-family: inherit;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.gc-majority-line {
+  fill: none;
+  stroke: var(--fg);
+  stroke-width: 1.2;
+}
+
+.gc-tally {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.7em;
+  margin-top: -6px;
+}
+
+.gc-num {
+  font-size: clamp(2rem, 9vw, 3.4rem);
+  font-weight: 700;
+  font-style: italic;
+  line-height: 1;
+}
+
+.gc-num-d { color: var(--gc-d); }
+.gc-num-r { color: var(--gc-r); }
+
+.gc-tally-empty .gc-num { color: var(--gc-empty); }
+
+.gc-vs {
+  font-size: 1rem;
+}
+
+/* hover box */
+.gc-tip {
+  position: absolute;
+  z-index: 5;
+  min-width: 10rem;
+  padding: 8px 10px;
+  border: 2px solid var(--fg);
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 0.85rem;
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.gc-tip[hidden] { display: none; }
+
+.gc-tip-name { display: block; font-size: 1rem; margin-bottom: 4px; }
+
+.gc-tip-holder {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.gc-tip-holder .gc-sw { width: 14px; }
+
+.gc-tip-none { font-style: italic; }
+
+/* phones: stack the panels */
+@media (max-width: 440px) {
+  .gc-grid { grid-template-columns: 1fr; }
+  .gc-left {
+    border-right: 0;
+    border-bottom: 2px solid var(--fg);
+    padding: 0 0 8px;
+  }
+  .gc-right { padding: 8px 0 6px; }
+  .gc-fig-metro { max-width: 300px; }
+}
