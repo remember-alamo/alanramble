@@ -3,7 +3,7 @@
   --gc-d: #2f4fe0;
   --gc-r: #c8202b;
   --gc-gray: #c8c8c8;
-  --gc-line: #555;
+  --gc-line: var(--fg); /* #000 in light mode, #fff in dark */
   --gc-empty: #8a8a8a;
 
   position: relative;
@@ -142,8 +142,61 @@
   padding: 4px;
 }
 
+.gc-frame-metro {
+  position: relative;
+}
+
+/* the inset pans and zooms: touch gestures go to the map, not the page */
 .gc-frame-metro svg {
   aspect-ratio: 1;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+
+.gc-frame-metro.gc-dragging svg {
+  cursor: grabbing;
+}
+
+.gc-frame-metro svg:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: -4px;
+}
+
+.gc-zoom {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.gc-zoom-btn {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--fg);
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.gc-zoom-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.gc-zoom-btn:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 1px;
+}
+
+.gc-zoom-reset {
+  margin-top: 3px;
 }
 
 .gc-frame path {

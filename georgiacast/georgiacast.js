@@ -126,7 +126,7 @@
     var metroMap = svg("svg", { viewBox: MAP.metro.join(" "), role: "group", preserveAspectRatio: "xMidYMid slice" });
     metroFrame.appendChild(metroMap);
     metroFig.appendChild(metroFrame);
-    metroFig.appendChild(h("figcaption", "gc-cap", "Atlanta Metro"));
+    metroFig.appendChild(h("figcaption", "gc-cap", "Zoomed View"));
     right.appendChild(metroFig);
 
     // bottom: view switch
@@ -152,7 +152,8 @@
     stateMap.appendChild(stateLayer);
     metroMap.appendChild(metroLayer);
     var m = MAP.metro;
-    stateMap.appendChild(svg("rect", { x: m[0], y: m[1], width: m[2], height: m[3], "class": "gc-metro-box" }));
+    var metroBox = svg("rect", { x: m[0], y: m[1], width: m[2], height: m[3], "class": "gc-metro-box" });
+    stateMap.appendChild(metroBox);
 
     function seat(num) {
       return DATA[chamber].current[num] || null;
@@ -221,7 +222,7 @@
       CHAMBERS.forEach(function (k) { chamberButtons[k].setAttribute("aria-pressed", String(k === chamber)); });
       MODES.forEach(function (x) { modeButtons[x.key].setAttribute("aria-pressed", String(x.key === mode)); });
       stateMap.setAttribute("aria-label", "Map of Georgia State " + DATA[chamber].label + " districts");
-      metroMap.setAttribute("aria-label", "Atlanta metro State " + DATA[chamber].label + " districts");
+      metroMap.setAttribute("aria-label", "Zoomed view of State " + DATA[chamber].label + " districts");
       hideTip();
       if (drawn !== chamber) { drawDistricts(); drawn = chamber; }
       paint();
@@ -280,12 +281,14 @@
 
     [stateMap, metroMap].forEach(function (map) {
       map.addEventListener("pointermove", function (e) {
+        if (panning) return;
         var t = districtOf(e);
         if (t) showTip(t, e.clientX, e.clientY);
         else hideTip();
       });
       map.addEventListener("pointerleave", hideTip);
       map.addEventListener("click", function (e) {
+        if (dragged) { dragged = false; return; }
         var t = districtOf(e);
         if (t) showTip(t, e.clientX, e.clientY);
         else hideTip();
@@ -293,6 +296,132 @@
     });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") hideTip(); });
 
+    // ---- inset pan / zoom ----
+    // The inset's viewBox is the camera. It can't zoom out past the starting Atlanta box,
+    // and can't pan off the state. The box on the statewide map follows it.
+    var MAX_ZOOM = 8;
+    var home = MAP.metro.slice();
+    var bounds = MAP.viewBox.split(" ").map(Number);
+    var view = home.slice();
+    var pointers = {};
+    var panning = false, dragged = false, last = null;
+
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+    function setView(x, y, w) {
+      w = clamp(w, home[2] / MAX_ZOOM, home[2]);
+      var hgt = w * home[3] / home[2];
+      x = clamp(x, bounds[0], bounds[0] + bounds[2] - w);
+      y = clamp(y, bounds[1], bounds[1] + bounds[3] - hgt);
+      view = [x, y, w, hgt];
+      metroMap.setAttribute("viewBox", view.join(" "));
+      metroBox.setAttribute("x", x);
+      metroBox.setAttribute("y", y);
+      metroBox.setAttribute("width", w);
+      metroBox.setAttribute("height", hgt);
+      zoomOut.disabled = w >= home[2];
+      zoomIn.disabled = w <= home[2] / MAX_ZOOM + 1e-6;
+      reset.disabled = view.join() === home.join();
+    }
+
+    // zoom by `factor` keeping the map point under (clientX, clientY) in place
+    function zoomAt(factor, clientX, clientY) {
+      var r = metroMap.getBoundingClientRect();
+      var fx = (clientX - r.left) / r.width, fy = (clientY - r.top) / r.height;
+      var w = clamp(view[2] / factor, home[2] / MAX_ZOOM, home[2]);
+      var hgt = w * home[3] / home[2];
+      setView(view[0] + fx * view[2] - fx * w, view[1] + fy * view[3] - fy * hgt, w);
+    }
+
+    function zoomCenter(factor) {
+      var r = metroMap.getBoundingClientRect();
+      zoomAt(factor, r.left + r.width / 2, r.top + r.height / 2);
+    }
+
+    function panBy(dxPx, dyPx) {
+      var r = metroMap.getBoundingClientRect();
+      setView(view[0] - dxPx * view[2] / r.width, view[1] - dyPx * view[3] / r.height, view[2]);
+    }
+
+    // centroid and spread of the active pointers (spread drives pinch zoom)
+    function gesture() {
+      var ids = Object.keys(pointers), x = 0, y = 0, d = 0;
+      ids.forEach(function (id) { x += pointers[id].x; y += pointers[id].y; });
+      x /= ids.length; y /= ids.length;
+      if (ids.length > 1) d = Math.hypot(pointers[ids[0]].x - pointers[ids[1]].x, pointers[ids[0]].y - pointers[ids[1]].y);
+      return { x: x, y: y, d: d, n: ids.length };
+    }
+
+    metroMap.addEventListener("pointerdown", function (e) {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+      last = gesture();
+      dragged = false;
+    });
+
+    window.addEventListener("pointermove", function (e) {
+      if (!pointers[e.pointerId]) return;
+      pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+      var g = gesture();
+      if (!panning && Math.hypot(g.x - last.x, g.y - last.y) < 4 && g.n === last.n && g.n < 2) return;
+      if (!panning) { panning = true; metroFrame.classList.add("gc-dragging"); hideTip(); }
+      dragged = true;
+      if (g.n === last.n) {
+        if (g.n > 1 && last.d) zoomAt(g.d / last.d, g.x, g.y);
+        panBy(g.x - last.x, g.y - last.y);
+      }
+      last = g;
+    });
+
+    function endPointer(e) {
+      if (!pointers[e.pointerId]) return;
+      delete pointers[e.pointerId];
+      if (Object.keys(pointers).length) { last = gesture(); return; }
+      panning = false;
+      metroFrame.classList.remove("gc-dragging");
+    }
+    window.addEventListener("pointerup", endPointer);
+    window.addEventListener("pointercancel", endPointer);
+
+    // wheel zooms the inset; once fully zoomed out, scrolling further out scrolls the page as usual
+    metroMap.addEventListener("wheel", function (e) {
+      if (e.deltaY > 0 && view[2] >= home[2]) return;
+      e.preventDefault();
+      hideTip();
+      zoomAt(Math.pow(1.0015, -e.deltaY * (e.deltaMode === 1 ? 16 : 1)), e.clientX, e.clientY);
+    }, { passive: false });
+
+    metroMap.addEventListener("dblclick", function (e) {
+      e.preventDefault();
+      zoomAt(2, e.clientX, e.clientY);
+    });
+
+    var controls = h("div", "gc-zoom");
+    var zoomIn = h("button", "gc-zoom-btn", "+");
+    var zoomOut = h("button", "gc-zoom-btn", "−");
+    var reset = h("button", "gc-zoom-btn gc-zoom-reset", "↺");
+    zoomIn.setAttribute("aria-label", "Zoom in");
+    zoomOut.setAttribute("aria-label", "Zoom out");
+    reset.setAttribute("aria-label", "Reset zoomed view");
+    [zoomIn, zoomOut, reset].forEach(function (b) { b.type = "button"; controls.appendChild(b); });
+    zoomIn.addEventListener("click", function () { zoomCenter(2); });
+    zoomOut.addEventListener("click", function () { zoomCenter(0.5); });
+    reset.addEventListener("click", function () { setView(home[0], home[1], home[2]); });
+    metroFrame.appendChild(controls);
+
+    // arrow keys pan, +/- zoom, when the inset has focus
+    metroMap.setAttribute("tabindex", "0");
+    metroMap.addEventListener("keydown", function (e) {
+      var r = metroMap.getBoundingClientRect(), step = r.width / 8;
+      var k = { ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] }[e.key];
+      if (k) panBy(k[0], k[1]);
+      else if (e.key === "+" || e.key === "=") zoomCenter(2);
+      else if (e.key === "-") zoomCenter(0.5);
+      else return;
+      e.preventDefault();
+    });
+
+    setView(home[0], home[1], home[2]);
     render();
   }
 
