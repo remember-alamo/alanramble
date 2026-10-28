@@ -19,6 +19,24 @@
     { key: "model", label: "Model" },
     { key: "shift", label: "Model Shifts" }
   ];
+  // Model Shifts scale: white at 0, the party color at half of SHIFT_MAX, darkest at SHIFT_MAX points and beyond.
+  // Matches the SHIFT legend gradient.
+  var SHIFT_MAX = 14;
+  var SHIFT_STOPS = {
+    D: [[255, 255, 255], [47, 79, 224], [0, 0, 122]],
+    R: [[255, 255, 255], [200, 32, 43], [107, 0, 0]]
+  };
+  var mounted = 0;
+
+  function mix(a, b, t) {
+    return "rgb(" + a.map(function (v, i) { return Math.round(v + (b[i] - v) * t); }).join(",") + ")";
+  }
+
+  function shiftColor(shift) {
+    var t = Math.min(Math.abs(shift) / SHIFT_MAX, 1);
+    var s = SHIFT_STOPS[shift < 0 ? "R" : "D"];
+    return t < 0.5 ? mix(s[0], s[1], t * 2) : mix(s[1], s[2], t * 2 - 1);
+  }
 
   function h(tag, className, text) {
     var node = document.createElement(tag);
@@ -104,7 +122,7 @@
 
     var stateFig = h("figure", "gc-fig");
     var stateFrame = h("div", "gc-frame gc-frame-state");
-    var stateMap = svg("svg", { viewBox: MAP.viewBox, role: "group" });
+    var stateMap = svg("svg", { viewBox: MAP.viewBox, role: "group", "data-map": "state" });
     stateFrame.appendChild(stateMap);
     stateFig.appendChild(stateFrame);
     stateFig.appendChild(h("figcaption", "gc-cap", "All Districts"));
@@ -123,7 +141,7 @@
 
     var metroFig = h("figure", "gc-fig gc-fig-metro");
     var metroFrame = h("div", "gc-frame gc-frame-metro");
-    var metroMap = svg("svg", { viewBox: MAP.metro.join(" "), role: "group", preserveAspectRatio: "xMidYMid slice" });
+    var metroMap = svg("svg", { viewBox: MAP.metro.join(" "), role: "group", preserveAspectRatio: "xMidYMid slice", "data-map": "zoom" });
     metroFrame.appendChild(metroMap);
     metroFig.appendChild(metroFrame);
     metroFig.appendChild(h("figcaption", "gc-cap", "Zoomed View"));
@@ -155,14 +173,79 @@
     var metroBox = svg("rect", { x: m[0], y: m[1], width: m[2], height: m[3], "class": "gc-metro-box" });
     stateMap.appendChild(metroBox);
 
+    // FLIP hatching: one pattern per party per map, resized so stripes stay ~5px apart on screen at any zoom
+    var uid = "gc" + (++mounted);
+    var hatches = [];
+    [stateMap, metroMap].forEach(function (map) {
+      var defs = svg("defs", {});
+      ["d", "r"].forEach(function (p) {
+        var pat = svg("pattern", { id: uid + "-" + map.getAttribute("data-map") + "-flip-" + p, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" });
+        var back = svg("rect", { "class": "gc-hatch-bg" });
+        var stripe = svg("rect", { "class": "gc-hatch-" + p });
+        pat.appendChild(back);
+        pat.appendChild(stripe);
+        defs.appendChild(pat);
+        hatches.push({ map: map, pat: pat, back: back, stripe: stripe });
+      });
+      map.insertBefore(defs, map.firstChild);
+    });
+
+    function sizeHatches() {
+      hatches.forEach(function (x) {
+        var px = x.map.getBoundingClientRect().width;
+        if (!px) return;
+        var period = 5 * parseFloat(x.map.getAttribute("viewBox").split(" ")[2]) / px;
+        [x.pat, x.back].forEach(function (n) {
+          n.setAttribute("width", period);
+          n.setAttribute("height", period);
+        });
+        x.stripe.setAttribute("width", period / 2);
+        x.stripe.setAttribute("height", period);
+      });
+    }
+    if (window.ResizeObserver) new ResizeObserver(sizeHatches).observe(stateMap);
+
     function seat(num) {
       return DATA[chamber].current[num] || null;
     }
 
-    function fillClass(num) {
-      if (mode !== "current") return "gc-gray";
+    function modelOf(num) {
+      var model = DATA[chamber].model;
+      return (model && model.districts[num]) || null;
+    }
+
+    // How a district is drawn and described in the current view:
+    //   cls / fill  -> the path's class and inline fill
+    //   swatch      -> class + inline background for the hover box's color chip
+    //   text        -> the hover box line (and screen-reader label)
+    function look(num, map) {
       var s = seat(num);
-      return s && s.party ? "gc-" + s.party.toLowerCase() : "gc-gray";
+      if (mode === "current") {
+        if (!s || !s.party) return { cls: "gc-gray", text: "Vacant" };
+        var p = s.party.toLowerCase();
+        return { cls: "gc-" + p, swatch: "gc-sw-" + p, text: s.name + " (" + s.party + ")" };
+      }
+      var md = modelOf(num);
+      if (!md) return { cls: "gc-gray", text: "Model coming soon" };
+      if (mode === "model") {
+        var win = md.margin > 0 ? "D" : "R";
+        var w = win.toLowerCase();
+        var flip = !!(s && s.party && s.party !== win);
+        return {
+          cls: flip ? "gc-flip" : "gc-" + w,
+          fill: flip ? "url(#" + uid + "-" + (map ? map.getAttribute("data-map") : "state") + "-flip-" + w + ")" : "",
+          swatch: "gc-sw-" + w + (flip ? " gc-sw-flip" : ""),
+          text: PARTY_NAME[win] + " " + (flip ? "FLIP" : "HOLD"),
+          detail: "Modeled margin of " + win + "+" + Math.abs(md.margin).toFixed(1) + "%"
+        };
+      }
+      var color = shiftColor(md.shift);
+      return {
+        cls: "gc-shift",
+        fill: color,
+        swatchBg: color,
+        text: PARTY_NAME[md.shift < 0 ? "R" : "D"] + " shift of " + Math.abs(md.shift).toFixed(1) + "%"
+      };
     }
 
     function drawDistricts() {
@@ -177,29 +260,40 @@
 
     function paint() {
       var label = DATA[chamber].label;
-      [stateLayer, metroLayer].forEach(function (layer) {
-        Array.prototype.forEach.call(layer.childNodes, function (p) {
+      [[stateLayer, stateMap], [metroLayer, metroMap]].forEach(function (pair) {
+        Array.prototype.forEach.call(pair[0].childNodes, function (p) {
           var num = p.getAttribute("data-district");
-          p.setAttribute("class", fillClass(num));
-          var s = seat(num);
-          p.setAttribute("aria-label", label + " District " + num +
-            (mode === "current" && s ? ": " + s.name + " (" + s.party + ")" : ""));
+          var l = look(num, pair[1]);
+          p.setAttribute("class", l.cls);
+          p.style.fill = l.fill || "";
+          p.setAttribute("aria-label", label + " District " + num + ": " + l.text + (l.detail ? ", " + l.detail : ""));
         });
       });
+      sizeHatches();
     }
 
+    // seats by party: who holds them now, or who the model has winning them
     function count() {
       var t = { D: 0, R: 0 };
-      var cur = DATA[chamber].current;
-      Object.keys(cur).forEach(function (k) {
-        if (cur[k].party in t) t[cur[k].party] += 1;
+      if (mode === "current") {
+        var cur = DATA[chamber].current;
+        Object.keys(cur).forEach(function (k) {
+          if (cur[k].party in t) t[cur[k].party] += 1;
+        });
+        return t;
+      }
+      var model = DATA[chamber].model;
+      if (!model) return null;
+      Object.keys(model.districts).forEach(function (k) {
+        t[model.districts[k].margin > 0 ? "D" : "R"] += 1;
       });
       return t;
     }
 
     function drawTally() {
       var seats = DATA[chamber].seats;
-      if (mode !== "current") {
+      var t = count();
+      if (!t) {
         gauge.d.style.strokeDasharray = "0 100";
         gauge.r.style.strokeDasharray = "0 100";
         numD.textContent = "–";
@@ -208,7 +302,6 @@
         tally.setAttribute("aria-label", "Model coming soon");
         return;
       }
-      var t = count();
       gauge.d.style.strokeDasharray = (t.D / seats * 100) + " 100";
       gauge.r.style.strokeDasharray = (t.R / seats * 100) + " 100";
       numD.textContent = t.D;
@@ -233,20 +326,19 @@
     function fillTip(num) {
       tip.textContent = "";
       tip.appendChild(h("strong", "gc-tip-name", DATA[chamber].label + " District " + num));
-      if (mode !== "current") {
-        tip.appendChild(h("div", "gc-tip-none", "Model coming soon"));
-        return;
-      }
-      var s = seat(num);
-      if (!s || !s.party) {
-        tip.appendChild(h("div", "gc-tip-none", "Vacant"));
+      var l = look(num);
+      if (!l.swatch && !l.swatchBg) {
+        tip.appendChild(h("div", "gc-tip-none", l.text));
         return;
       }
       var row = h("div", "gc-tip-holder");
-      row.appendChild(h("span", "gc-sw gc-sw-" + s.party.toLowerCase()));
-      row.appendChild(h("span", null, s.name + " (" + s.party + ")"));
+      var sw = h("span", "gc-sw " + (l.swatch || ""));
+      if (l.swatchBg) sw.style.background = l.swatchBg;
+      row.appendChild(sw);
+      row.appendChild(h("span", null, l.text));
       tip.appendChild(row);
-      tip.appendChild(h("div", null, "Held by " + PARTY_NAME[s.party] + "s"));
+      if (l.detail) tip.appendChild(h("div", null, l.detail));
+      if (mode === "current") tip.appendChild(h("div", null, "Held by " + PARTY_NAME[seat(num).party] + "s"));
     }
 
     function placeTip(clientX, clientY) {
@@ -322,6 +414,7 @@
       zoomOut.disabled = w >= home[2];
       zoomIn.disabled = w <= home[2] / MAX_ZOOM + 1e-6;
       reset.disabled = view.join() === home.join();
+      sizeHatches();
     }
 
     // zoom by `factor` keeping the map point under (clientX, clientY) in place

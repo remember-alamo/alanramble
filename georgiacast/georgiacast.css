@@ -214,6 +214,11 @@
 .gc-frame path.gc-r { fill: var(--gc-r); }
 .gc-frame path.gc-gray { fill: var(--gc-gray); }
 
+/* FLIP hatching (pattern fill is set inline per district) */
+.gc-hatch-bg { fill: var(--bg); }
+.gc-hatch-d { fill: var(--gc-d); }
+.gc-hatch-r { fill: var(--gc-r); }
+
 .gc-frame path:hover {
   stroke: var(--fg);
   stroke-width: 2px;
