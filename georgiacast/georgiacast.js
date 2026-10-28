@@ -54,19 +54,19 @@
 
   // semicircle seat gauge: D fills from the left, R from the right, majority marked at the top
   function buildGauge() {
-    var g = svg("svg", { viewBox: "0 0 200 118", "class": "gc-gauge", "aria-hidden": "true" });
-    var arc = "M22,110 A78,78 0 0 1 178,110";
-    var back = "M178,110 A78,78 0 0 0 22,110";
+    var g = svg("svg", { viewBox: "0 0 200 136", "class": "gc-gauge", "aria-hidden": "true" });
+    var arc = "M22,128 A78,78 0 0 1 178,128";
+    var back = "M178,128 A78,78 0 0 0 22,128";
     g.appendChild(svg("path", { d: arc, "class": "gc-arc gc-arc-empty", pathLength: 100 }));
     var d = svg("path", { d: arc, "class": "gc-arc gc-arc-d", pathLength: 100 });
     var r = svg("path", { d: back, "class": "gc-arc gc-arc-r", pathLength: 100 });
     g.appendChild(d);
     g.appendChild(r);
-    var label = svg("text", { x: 100, y: 7, "class": "gc-majority" });
+    var label = svg("text", { x: 100, y: 5, "class": "gc-majority" });
     label.textContent = "MAJORITY";
     g.appendChild(label);
-    g.appendChild(svg("line", { x1: 100, y1: 12, x2: 100, y2: 22, "class": "gc-majority-line" }));
-    g.appendChild(svg("path", { d: "M96.5,19 L100,24 L103.5,19", "class": "gc-majority-line" }));
+    g.appendChild(svg("line", { x1: 100, y1: 10, x2: 100, y2: 31, "class": "gc-majority-line" }));
+    g.appendChild(svg("path", { d: "M96.5,28 L100,32 L103.5,28", "class": "gc-majority-line" }));
     return { node: g, d: d, r: r };
   }
 

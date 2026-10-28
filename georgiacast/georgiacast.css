@@ -268,7 +268,7 @@
 
 .gc-tally {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: center;
   gap: 0.7em;
   margin-top: -6px;
