@@ -158,6 +158,10 @@
   cursor: grabbing;
 }
 
+/* the box on the statewide map can be dragged to move the inset */
+.gc-frame-state.gc-over-box svg { cursor: grab; }
+.gc-frame-state.gc-dragging svg { cursor: grabbing; user-select: none; }
+
 .gc-frame-metro svg:focus-visible {
   outline: 2px solid var(--fg);
   outline-offset: -4px;

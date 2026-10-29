@@ -572,6 +572,51 @@
       e.preventDefault();
     });
 
+    // ---- drag the box on the statewide map to move the inset ----
+    function toState(e) {
+      var p = stateMap.createSVGPoint();
+      p.x = e.clientX; p.y = e.clientY;
+      return p.matrixTransform(stateMap.getScreenCTM().inverse());
+    }
+
+    // a few pixels of slop so the box stays easy to grab when zoomed far in
+    function overBox(e) {
+      var p = toState(e), pad = 4 * bounds[2] / stateMap.getBoundingClientRect().width;
+      return p.x >= view[0] - pad && p.x <= view[0] + view[2] + pad &&
+             p.y >= view[1] - pad && p.y <= view[1] + view[3] + pad;
+    }
+
+    var boxDrag = null;
+    stateMap.addEventListener("pointerdown", function (e) {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      if (!overBox(e)) return;
+      e.preventDefault();
+      boxDrag = { id: e.pointerId, cx: e.clientX, cy: e.clientY, start: toState(e), vx: view[0], vy: view[1] };
+      dragged = false;
+    });
+
+    stateMap.addEventListener("pointermove", function (e) {
+      if (!boxDrag) stateFrame.classList.toggle("gc-over-box", overBox(e));
+    });
+
+    window.addEventListener("pointermove", function (e) {
+      if (!boxDrag || e.pointerId !== boxDrag.id) return;
+      if (!panning && Math.hypot(e.clientX - boxDrag.cx, e.clientY - boxDrag.cy) < 4) return;
+      if (!panning) { panning = true; stateFrame.classList.add("gc-dragging"); hideTip(); }
+      dragged = true;
+      var p = toState(e);
+      setView(boxDrag.vx + p.x - boxDrag.start.x, boxDrag.vy + p.y - boxDrag.start.y, view[2]);
+    });
+
+    function endBoxDrag(e) {
+      if (!boxDrag || e.pointerId !== boxDrag.id) return;
+      boxDrag = null;
+      panning = false;
+      stateFrame.classList.remove("gc-dragging");
+    }
+    window.addEventListener("pointerup", endBoxDrag);
+    window.addEventListener("pointercancel", endBoxDrag);
+
     setView(home[0], home[1], home[2]);
     render();
   }

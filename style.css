@@ -139,6 +139,20 @@ body {
   outline: 2px solid var(--fg);
 }
 
+/* desktop home page: the feature widgets sit side by side */
+@media (min-width: 1200px) {
+  .page--home {
+    width: min(100%, 1260px);
+  }
+
+  .features {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 32px;
+    align-items: start;
+  }
+}
+
 @media (max-width: 420px) {
   .title { font-size: 1.5rem; }
   .label,
