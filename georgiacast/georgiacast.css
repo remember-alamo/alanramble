@@ -44,6 +44,7 @@
 
 .gc-right {
   padding-right: 0;
+  container-type: inline-size; /* gauge and tally scale with this column */
 }
 
 /* legend */
@@ -267,7 +268,8 @@
 /* seat gauge */
 .gc-gauge {
   display: block;
-  width: min(100%, 220px);
+  width: min(92%, 220px);
+  width: 92cqi;
   height: auto;
   margin-top: 4px;
   overflow: visible;
@@ -307,6 +309,7 @@
 
 .gc-num {
   font-size: clamp(2rem, 9vw, 3.4rem);
+  font-size: clamp(2rem, 22cqi, 7rem);
   font-weight: 700;
   font-style: italic;
   line-height: 1;
@@ -319,6 +322,7 @@
 
 .gc-vs {
   font-size: 1rem;
+  font-size: clamp(1rem, 6cqi, 2rem);
 }
 
 /* hover box */
@@ -360,4 +364,6 @@
   }
   .gc-right { padding: 8px 0 6px; }
   .gc-fig-metro { max-width: 300px; }
+  .gc-gauge { width: 220px; }
+  .gc-num { font-size: 3.4rem; }
 }

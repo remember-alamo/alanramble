@@ -33,6 +33,16 @@ body {
   width: min(100%, 1000px);
 }
 
+/* home page widgets at 1.5x the standard column */
+.page--home {
+  width: min(100%, 824px);
+}
+
+/* GEORGIACAST page: the widget at 2x the standard column */
+.page--georgiacast {
+  width: min(100%, 1088px);
+}
+
 /* masthead */
 .masthead {
   text-align: center;
@@ -142,7 +152,7 @@ body {
 /* desktop home page: the feature widgets sit side by side */
 @media (min-width: 1200px) {
   .page--home {
-    width: min(100%, 1260px);
+    width: min(100%, 1860px);
   }
 
   .features {
