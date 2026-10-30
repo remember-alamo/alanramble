@@ -402,7 +402,6 @@
       opTabs = h("div", "pc-tabs pc-op-tabs");
       opTabs.setAttribute("role", "group");
       opTabs.setAttribute("aria-label", "Opinions by office");
-      opSection.appendChild(opTabs);
       opBody = h("div", "pc-op-body");
       opSide = h("div", "pc-op-side");
       opFrame = h("div", "pc-op-frame");
@@ -442,23 +441,32 @@
     function renderOpinions() {
       var offices = order.filter(officeHasOpinions);
 
-      // office switch: only offices with at least one opinion, and only if there is a choice
-      opTabs.textContent = "";
-      offices.forEach(function (key) {
-        var b = h("button", "pc-tab", labels[key]);
-        b.type = "button";
-        b.setAttribute("aria-pressed", String(key === current));
-        b.addEventListener("click", function () { show(key); if (selected[key]) setHash(key, selected[key]); });
-        opTabs.appendChild(b);
-      });
-      opTabs.hidden = offices.length < 2;
-
       opMain.textContent = "";
       if (!selected[current] || !raceFor(contests[current], selected[current])) {
         selected[current] = firstChoice(current);
       }
       var code = selected[current];
       var race = code && raceFor(contests[current], code);
+
+      // office switch: only offices with at least one opinion, and only if there is a choice.
+      // It sits under the state shape and switches to this same state's other race; an office
+      // with no race in this state is greyed out and shows "-".
+      opTabs.textContent = "";
+      offices.forEach(function (key) {
+        var none = !!race && key !== current && !raceFor(contests[key], code);
+        var b = h("button", "pc-tab", none ? "-" : labels[key]);
+        b.type = "button";
+        b.disabled = none;
+        b.setAttribute("aria-pressed", String(key === current));
+        if (none) b.setAttribute("aria-label", "No " + labels[key] + " race in " + STATES.paths[code].name);
+        b.addEventListener("click", function () {
+          if (race && raceFor(contests[key], code)) selected[key] = code;
+          show(key);
+          if (selected[key]) setHash(key, selected[key]);
+        });
+        opTabs.appendChild(b);
+      });
+      opTabs.hidden = offices.length < 2;
 
       // highlight the selected state on the map
       Object.keys(paths).forEach(function (c) {
@@ -467,10 +475,12 @@
 
       if (!race || !officeHasOpinions(current)) {
         opSide.hidden = true;
+        opMain.appendChild(opTabs);
         opMain.appendChild(h("p", "pc-op-soon", labels[current] + " opinions are coming soon."));
         return;
       }
       opSide.hidden = false;
+      opSide.insertBefore(opTabs, opSelect);
       drawOutline(code, race);
 
       opSelect.textContent = "";

@@ -324,7 +324,20 @@
 
 .pc-op-tabs {
   justify-content: center;
-  margin-bottom: 18px;
+  margin-top: 8px;
+}
+
+.pc-op-tabs .pc-tab {
+  flex: 1;
+  max-width: 7.5em;
+}
+
+/* no race for this state in that office */
+.pc-op-tabs .pc-tab:disabled {
+  border-color: color-mix(in srgb, var(--fg) 45%, var(--bg));
+  background: color-mix(in srgb, var(--fg) 18%, var(--bg));
+  color: color-mix(in srgb, var(--fg) 60%, var(--bg));
+  cursor: default;
 }
 
 .pc-op-tabs[hidden] { display: none; }
