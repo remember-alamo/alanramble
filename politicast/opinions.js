@@ -2,7 +2,7 @@
 //
 // HOW TO WRITE ONE
 //   Type between the backticks ( ` ` ) next to the state. Leave it empty (``) and the page shows
-//   "Opinion coming soon" for that race.
+//   "Opinion not provided for this contest." for that race.
 //   * A blank line starts a new paragraph. Single line breaks are treated as spaces, so it is fine
 //     to hard-wrap lines in your editor.
 //   * Apostrophes and "quotes" are fine. Avoid three things inside the backticks:

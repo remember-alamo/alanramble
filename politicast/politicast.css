@@ -413,15 +413,13 @@
   text-transform: uppercase;
 }
 
+/* plain color bar in the rating's shade */
 .pc-op-margin {
   flex: 1;
+  align-self: stretch;
   min-width: 4.5rem;
-  padding: 0 8px;
+  min-height: 1.2em;
   background: var(--c);
-  color: #fff;
-  font-size: 1.3rem;
-  text-align: right;
-  text-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
 }
 
 .pc-op-heading {

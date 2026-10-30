@@ -67,10 +67,6 @@
     return race || null;
   }
 
-  function margin(race) {
-    return race.lean + "+" + Number(race.margin).toFixed(1);
-  }
-
   function describe(race) {
     return LEVEL_LABEL[race.rating] + " " + PARTY_NAME[race.lean];
   }
@@ -271,7 +267,7 @@
         if (ln.rect) ln.rect.setAttribute("class", race ? "pc-chip pc-" + race.lean.toLowerCase() + "-" + race.rating : "pc-chip");
         if (race) {
           p.setAttribute("tabindex", "0");
-          p.setAttribute("aria-label", STATES.paths[code].name + ": " + describe(race) + ", " + margin(race));
+          p.setAttribute("aria-label", STATES.paths[code].name + ": " + describe(race));
         } else {
           p.removeAttribute("tabindex");
           p.setAttribute("aria-label", STATES.paths[code].name + ": no race");
@@ -305,7 +301,6 @@
         list.appendChild(h("li", null, c.name + " (" + c.party + ")"));
       });
       tip.appendChild(list);
-      tip.appendChild(h("div", "pc-tip-margin", "Projected margin: " + margin(r)));
     }
 
     function placeTip(clientX, clientY) {
@@ -495,7 +490,7 @@
       var rating = h("p", "pc-op-rating");
       rating.appendChild(document.createTextNode("POLITICAST Rating: "));
       rating.appendChild(h("span", "pc-op-level pc-" + lean, describe(race)));
-      rating.appendChild(h("span", "pc-op-margin pc-" + lean, "+" + Number(race.margin).toFixed(1) + "%"));
+      rating.appendChild(h("span", "pc-op-margin pc-" + lean));
       opMain.appendChild(rating);
 
       opMain.appendChild(h("h4", "pc-op-heading", "THE OPINION:"));
@@ -504,7 +499,7 @@
           opMain.appendChild(h("p", "pc-op-text", para.replace(/\s*\n\s*/g, " ").trim()));
         });
       } else {
-        opMain.appendChild(h("p", "pc-op-text pc-op-soon", "Opinion coming soon."));
+        opMain.appendChild(h("p", "pc-op-text pc-op-soon", "Opinion not provided for this contest."));
       }
     }
 
